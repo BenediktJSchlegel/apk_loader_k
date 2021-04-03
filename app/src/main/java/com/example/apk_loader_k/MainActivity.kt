@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Environment
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -28,6 +29,15 @@ class MainActivity : AppCompatActivity() {
         val topButton = findViewById<Button>(R.id.top_button)
         val permissionButton = findViewById<Button>(R.id.permission_button)
         val installButton = findViewById<Button>(R.id.install_button)
+        val input = findViewById<TextView>(R.id.text_input)
+
+        installButton.text = "INSTALL APP"
+
+        val packageManager: PackageManager = this.packageManager
+        if(isPackageInstalled(input.text.toString(), packageManager)){
+            installButton.text = "DELETE APP"
+            installButton.setBackgroundColor(233)
+        }
 
         topButton.setOnClickListener { _ ->
             switchToOtherApp();
@@ -39,6 +49,15 @@ class MainActivity : AppCompatActivity() {
 
         installButton.setOnClickListener { _ ->
             installApk();
+        }
+    }
+
+    private fun isPackageInstalled(packageName: String, packageManager: PackageManager): Boolean {
+        return try {
+            packageManager.getPackageInfo(packageName, 0)
+            true
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
         }
     }
 

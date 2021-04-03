@@ -40,8 +40,9 @@
         android:layout_height="81dp"
         android:ems="10"
         android:inputType="textPersonName"
-        android:text="Name"
+        android:text="com.example.targetapplication"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.495"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/top_button" />
 </androidx.constraintlayout.widget.ConstraintLayout>
