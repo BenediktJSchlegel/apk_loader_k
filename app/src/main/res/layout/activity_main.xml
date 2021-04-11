@@ -16,23 +16,13 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/permission_button"
-        android:layout_width="179dp"
-        android:layout_height="85dp"
-        android:text="Permissions"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_input" />
-
-    <Button
         android:id="@+id/install_button"
         android:layout_width="255dp"
         android:layout_height="202dp"
         android:text="INSTALL"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/permission_button" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <EditText
         android:id="@+id/text_input"
@@ -40,7 +30,7 @@
         android:layout_height="81dp"
         android:ems="10"
         android:inputType="textPersonName"
-        android:text="com.example.targetapplication"
+        android:text="com.example.payload"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.495"
         app:layout_constraintStart_toStartOf="parent"

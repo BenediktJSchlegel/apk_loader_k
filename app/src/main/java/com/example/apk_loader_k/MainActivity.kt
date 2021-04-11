@@ -3,9 +3,12 @@ package com.example.apk_loader_k
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.view.View
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -27,32 +30,57 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val topButton = findViewById<Button>(R.id.top_button)
-        val permissionButton = findViewById<Button>(R.id.permission_button)
         val installButton = findViewById<Button>(R.id.install_button)
         val input = findViewById<TextView>(R.id.text_input)
 
         installButton.text = "INSTALL APP"
 
-        val packageManager: PackageManager = this.packageManager
-        if(isPackageInstalled(input.text.toString(), packageManager)){
-            installButton.text = "DELETE APP"
-            installButton.setBackgroundColor(233)
-        }
+        startCheckPackageLoop(input.text.toString(), this.packageManager)
 
         topButton.setOnClickListener { _ ->
             switchToOtherApp();
         }
 
-        permissionButton.setOnClickListener { _ ->
-            showAllPermissions();
+        installButton.setOnClickListener { _ ->
+            if(isPackageInstalled(input.text.toString(), this.packageManager)){
+                deleteApk(input.text.toString());
+            }
+            else{
+                installApk();
+            }
+
         }
 
-        installButton.setOnClickListener { _ ->
-            installApk();
-        }
+        showAllPermissions();
+    }
+
+
+    private fun startCheckPackageLoop(packageName: String, packageManager: PackageManager){
+        val mainHandler = Handler(Looper.getMainLooper())
+
+        mainHandler.post(object : Runnable {
+            override fun run() {
+
+                val installButton = findViewById<Button>(R.id.install_button)
+                val switchButton = findViewById<Button>(R.id.top_button)
+
+                if (isPackageInstalled(packageName, packageManager)) {
+                    installButton.text = "DELETE APP"
+                    switchButton.isEnabled = true
+                    installButton.setBackgroundColor(Color.RED);
+                } else {
+                    installButton.text = "INSTALL APP"
+                    switchButton.isEnabled = false
+                    installButton.setBackgroundColor(Color.GREEN);
+                }
+
+                mainHandler.postDelayed(this, 1000)
+            }
+        })
     }
 
     private fun isPackageInstalled(packageName: String, packageManager: PackageManager): Boolean {
+
         return try {
             packageManager.getPackageInfo(packageName, 0)
             true
@@ -62,22 +90,43 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun switchToOtherApp(){
-        val text = findViewById<TextView>(R.id.text_input)
+        try {
 
-        val intent = packageManager.getLaunchIntentForPackage(text.text.toString())
-        startActivity(intent)
+            val text = findViewById<TextView>(R.id.text_input)
+
+            val intent = packageManager.getLaunchIntentForPackage(text.text.toString())
+            startActivity(intent)
+        }catch (e: Exception){
+            toastException(e)
+        }
+
+    }
+
+    private fun deleteApk(packageName: String){
+        try {
+            val packageURI = Uri.parse("package:$packageName")
+            val uninstallIntent = Intent(Intent.ACTION_DELETE, packageURI)
+            startActivity(uninstallIntent)
+        }catch (e: Exception){
+            toastException(e)
+        }
+
     }
 
     private fun installApk(){
-        val newFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/payload.apk")
+        try {
+            val newFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + "/payload.apk")
 
-        val ur = FileProvider.getUriForFile(this@MainActivity, BuildConfig.APPLICATION_ID + ".provider", newFile)
+            val ur = FileProvider.getUriForFile(this@MainActivity, BuildConfig.APPLICATION_ID + ".provider", newFile)
 
 
-        val promptInstall = Intent(Intent.ACTION_VIEW).setDataAndType(ur, "application/vnd.android.package-archive")
-        promptInstall.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        promptInstall.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        this.startActivity(promptInstall)
+            val promptInstall = Intent(Intent.ACTION_VIEW).setDataAndType(ur, "application/vnd.android.package-archive")
+            promptInstall.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            promptInstall.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            this.startActivity(promptInstall)
+        }catch (e: Exception){
+            toastException(e)
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
@@ -89,24 +138,6 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(this@MainActivity, "READ EXTERNAL Denied!", Toast.LENGTH_SHORT).show()
                 }
-                if (grantResults.isNotEmpty()
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this@MainActivity, "WRITE EXTERNAL Granted!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "WRITE EXTERNAL Denied!", Toast.LENGTH_SHORT).show()
-                }
-                if (grantResults.isNotEmpty()
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this@MainActivity, "DELETE Granted!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "DELETE Denied!", Toast.LENGTH_SHORT).show()
-                }
-                if (grantResults.isNotEmpty()
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this@MainActivity, "INSTALL Granted!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "INSTALL Denied!", Toast.LENGTH_SHORT).show()
-                }
             }
             REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE -> {
                 if (grantResults.isNotEmpty()
@@ -115,18 +146,6 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(this@MainActivity, "WRITE EXTERNAL Denied!", Toast.LENGTH_SHORT).show()
                 }
-                if (grantResults.isNotEmpty()
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this@MainActivity, "DELETE Granted!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "DELETE Denied!", Toast.LENGTH_SHORT).show()
-                }
-                if (grantResults.isNotEmpty()
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this@MainActivity, "INSTALL Granted!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "INSTALL Denied!", Toast.LENGTH_SHORT).show()
-                }
             }
             REQUEST_PERMISSION_REQUEST_DELETE_PACKAGES -> {
                 if (grantResults.isNotEmpty()
@@ -134,12 +153,6 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this@MainActivity, "DELETE Granted!", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this@MainActivity, "DELETE Denied!", Toast.LENGTH_SHORT).show()
-                }
-                if (grantResults.isNotEmpty()
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this@MainActivity, "INSTALL Granted!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "INSTALL Denied!", Toast.LENGTH_SHORT).show()
                 }
             }
             REQUEST_PERMISSION_REQUEST_INSTALL_PACKAGES -> if (grantResults.isNotEmpty()
@@ -151,6 +164,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun toastException(e: Exception){
+        Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
+    }
 
     private fun showExplanation(title: String,
                                 message: String,
